@@ -27,6 +27,7 @@
     "umd",
     "commonjs"
   ],
+  "main": "dist/ssb.js",
   "scripts": {
     "build": "webpack --mode=build",
     "dev": "webpack --progress --colors --watch --mode=dev",
