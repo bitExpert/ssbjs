@@ -1,0 +1,19 @@
+{
+  "name": "ssbjs",
+  "version": "0.1.0",
+  "license": "Apache-2.0",
+  "homepage": "https://github.com/bitExpert/ssbjs",
+  "authors": [
+      "Peter Hildenbrand <p.hildenbrand@bitexpert.de>"
+  ],
+  "description": "A simple service bus for JavaScript",
+  "keywords": [
+    "umd",
+    "servicebus",
+    "iframe",
+    "postmessageapi",
+    "es6",
+    "typescript",
+    "universal"
+  ]
+}
