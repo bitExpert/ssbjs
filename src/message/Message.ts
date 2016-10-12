@@ -14,19 +14,11 @@ abstract class Message {
     constructor (id: String, type: String , name: String, payload?: Object) {
         let me = this;
 
-        if (!name) {
-            throw new Error('A name has to be set');
-        }
-
-        if (typeof name !== 'string' || !name.length) {
+        if (!name.length) {
             throw new Error('A name has to be a non-empty string');
         }
 
-        payload = (typeof payload === 'undefined') ? {} : payload;
-
-        if (Object.getPrototypeOf(payload) !== Object.prototype) {
-            throw new Error('Payload has to be an object');
-        }
+        payload = payload || {};
 
         me._id = id;
         me._type = type;
