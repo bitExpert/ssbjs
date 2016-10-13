@@ -6,6 +6,7 @@
      * - a relative path to a JSON file
      */
     "extends": "tslint:latest",
+    "formatter": "stylish",
     "rules": {
         "quotemark": [true, "single", "avoid-escape"],
         "class-name": true,
