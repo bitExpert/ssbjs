@@ -1,0 +1,41 @@
+{
+    /*
+     * Possible values:
+     * - the name of a built-in config
+     * - the name of an NPM module which has a "main" file that exports a config object
+     * - a relative path to a JSON file
+     */
+    "extends": "tslint:latest",
+    "rules": {
+        "quotemark": [true, "single", "avoid-escape"],
+        "class-name": true,
+        "interface-name": false,
+        "one-variable-per-declaration": false,
+        "trailing-comma": false,
+        "ordered-imports": false,
+        "variable-name": [true, "allow-leading-underscore"],
+        "no-empty": false,
+        "member-ordering": [true, { "order": [
+            "public-static-field",
+            "protected-static-field",
+            "private-static-field",
+            "public-instance-field",
+            "protected-instance-field",
+            "private-instance-field",
+            "constructor",
+            "public-static-method",
+            "protected-static-method",
+            "private-static-method",
+            "public-instance-method",
+            "protected-instance-method",
+            "private-instance-method"
+        ]}],
+        "no-constructor-vars": true
+    },
+    "rulesDirectory": [
+        /*
+         * A list of relative or absolute paths to directories that contain custom rules.
+         * See the Custom Rules documentation below for more details.
+         */
+    ]
+}

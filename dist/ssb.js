@@ -83,13 +83,43 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	var _createClass3 = _interopRequireDefault(_createClass2);
 	
-	var _Message = __webpack_require__(85);
+	var _LoopbackAdapter = __webpack_require__(85);
 	
-	var _MessageBus = __webpack_require__(120);
+	var _LoopbackAdapter2 = _interopRequireDefault(_LoopbackAdapter);
 	
-	var _Adapter = __webpack_require__(132);
+	var _PostMessageAPIAdapter = __webpack_require__(117);
 	
-	var _IdGenerator = __webpack_require__(133);
+	var _PostMessageAPIAdapter2 = _interopRequireDefault(_PostMessageAPIAdapter);
+	
+	var _Command = __webpack_require__(120);
+	
+	var _Command2 = _interopRequireDefault(_Command);
+	
+	var _Event = __webpack_require__(127);
+	
+	var _Event2 = _interopRequireDefault(_Event);
+	
+	var _Query = __webpack_require__(128);
+	
+	var _Query2 = _interopRequireDefault(_Query);
+	
+	var _QueryResult = __webpack_require__(129);
+	
+	var _QueryResult2 = _interopRequireDefault(_QueryResult);
+	
+	var _CommandBus = __webpack_require__(130);
+	
+	var _CommandBus2 = _interopRequireDefault(_CommandBus);
+	
+	var _EventBus = __webpack_require__(144);
+	
+	var _EventBus2 = _interopRequireDefault(_EventBus);
+	
+	var _QueryBus = __webpack_require__(145);
+	
+	var _QueryBus2 = _interopRequireDefault(_QueryBus);
+	
+	var _IdGenerator = __webpack_require__(146);
 	
 	var _IdGenerator2 = _interopRequireDefault(_IdGenerator);
 	
@@ -122,75 +152,45 @@ return /******/ (function(modules) { // webpackBootstrap
 	        (0, _classCallCheck3.default)(this, ServiceBus);
 	
 	        var me = this;
-	        me._adapter = adapter || new _Adapter.Adapters.Loopback();
-	        me._queryBus = new _MessageBus.QueryBus();
-	        me._commandBus = new _MessageBus.CommandBus();
-	        me._eventBus = new _MessageBus.EventBus();
+	        me._adapter = adapter || new _LoopbackAdapter2.default();
+	        me._queryBus = new _QueryBus2.default();
+	        me._commandBus = new _CommandBus2.default();
+	        me._eventBus = new _EventBus2.default();
 	        me._queryHandles = new _map2.default();
 	        me._idGenerator = new _IdGenerator2.default();
 	        me._adapter.registerMessageHandler(me.handleIncomingMessage.bind(me));
+	        me._adapter.open();
 	    }
 	
 	    (0, _createClass3.default)(ServiceBus, [{
 	        key: 'close',
-	        value: function close() {}
-	    }, {
-	        key: 'handleIncomingMessage',
-	        value: function handleIncomingMessage(message) {
-	            var me = this;
-	            if (message instanceof _Message.Command) {
-	                me._commandBus.dispatch(message);
-	            } else if (message instanceof _Message.Event) {
-	                me._eventBus.dispatch(message);
-	            } else if (message instanceof _Message.Query) {
-	                var result = me._queryBus.dispatch(message);
-	                result.then(function (data) {
-	                    me._adapter.send(new _Message.QueryResult(message.id, message.name, true, data));
-	                }, function (reason) {
-	                    me._adapter.send(new _Message.QueryResult(message.id, message.name, false, {}, reason));
-	                });
-	            } else if (message instanceof _Message.QueryResult) {
-	                var handle = me._queryHandles.get(message.id);
-	                if (!handle) {
-	                    throw new Error('No handle found for message with id ' + message.id + '(' + message.name + ')');
-	                }
-	                if (message.success) {
-	                    handle.resolve(message.payload);
-	                } else {
-	                    handle.reject(message.error);
-	                }
-	                me._queryHandles.delete(message.id);
-	            }
+	        value: function close() {
+	            this._adapter.close();
 	        }
 	    }, {
 	        key: 'handle',
 	        value: function handle(commandName, handler, scope) {
-	            var me = this;
-	            return me._commandBus.register(commandName, handler, scope);
+	            return this._commandBus.register(commandName, handler, scope);
 	        }
 	    }, {
 	        key: 'on',
 	        value: function on(eventName, listener, scope) {
-	            var me = this;
-	            return me._eventBus.register(eventName, listener, scope);
+	            return this._eventBus.register(eventName, listener, scope);
 	        }
 	    }, {
 	        key: 'once',
 	        value: function once(eventName, listener, scope) {
-	            var me = this;
-	            return me._eventBus.register(eventName, listener, scope, true);
+	            return this._eventBus.register(eventName, listener, scope, true);
 	        }
 	    }, {
 	        key: 'off',
 	        value: function off(listener) {
-	            var me = this;
-	            me._eventBus.unregister(listener);
+	            this._eventBus.unregister(listener);
 	        }
 	    }, {
 	        key: 'allOff',
 	        value: function allOff(eventName) {
-	            var me = this;
-	            me._eventBus.unregisterAllFor(eventName);
+	            this._eventBus.unregisterAllFor(eventName);
 	        }
 	    }, {
 	        key: 'find',
@@ -203,7 +203,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        value: function command(commandName, payload) {
 	            var me = this,
 	                id = me._idGenerator.next().value,
-	                command = new _Message.Command(id, commandName, payload);
+	                command = new _Command2.default(id, commandName, payload);
 	            me._adapter.send(command);
 	        }
 	    }, {
@@ -211,7 +211,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        value: function occur(eventName, payload) {
 	            var me = this,
 	                id = me._idGenerator.next().value,
-	                event = new _Message.Event(id, eventName, payload);
+	                event = new _Event2.default(id, eventName, payload);
 	            me._adapter.send(event);
 	        }
 	    }, {
@@ -219,13 +219,41 @@ return /******/ (function(modules) { // webpackBootstrap
 	        value: function query(queryName, payload) {
 	            var me = this,
 	                id = me._idGenerator.next().value,
-	                query = new _Message.Query(id, queryName, payload),
+	                query = new _Query2.default(id, queryName, payload),
 	                promise = void 0;
 	            promise = new _promise2.default(function (resolve, reject) {
 	                me._queryHandles.set(query.id, new PromiseHandle(resolve, reject));
 	            });
 	            me._adapter.send(query);
 	            return promise;
+	        }
+	    }, {
+	        key: 'handleIncomingMessage',
+	        value: function handleIncomingMessage(message) {
+	            var me = this;
+	            if (message instanceof _Command2.default) {
+	                me._commandBus.dispatch(message);
+	            } else if (message instanceof _Event2.default) {
+	                me._eventBus.dispatch(message);
+	            } else if (message instanceof _Query2.default) {
+	                var result = me._queryBus.dispatch(message);
+	                result.then(function (data) {
+	                    me._adapter.send(new _QueryResult2.default(message.id, message.name, true, data));
+	                }, function (reason) {
+	                    me._adapter.send(new _QueryResult2.default(message.id, message.name, false, {}, reason));
+	                });
+	            } else if (message instanceof _QueryResult2.default) {
+	                var handle = me._queryHandles.get(message.id);
+	                if (!handle) {
+	                    throw new Error('No handle found for message with _id ' + message.id + '(' + message.name + ')');
+	                }
+	                if (message.success) {
+	                    handle.resolve(message.payload);
+	                } else {
+	                    handle.reject(message.error);
+	                }
+	                me._queryHandles.delete(message.id);
+	            }
 	        }
 	    }], [{
 	        key: 'open',
@@ -235,7 +263,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	    }, {
 	        key: 'Adapter',
 	        get: function get() {
-	            return _Adapter.Adapters;
+	            return {
+	                Loopback: _LoopbackAdapter2.default,
+	                PostMessageAPI: _PostMessageAPIAdapter2.default
+	            };
 	        }
 	    }]);
 	    return ServiceBus;
@@ -2217,23 +2248,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	Object.defineProperty(exports, "__esModule", {
 	    value: true
 	});
-	exports.MessageType = exports.MessageDto = exports.MessageFactory = exports.Event = exports.QueryResult = exports.Query = exports.Command = exports.Message = undefined;
 	
 	var _getPrototypeOf = __webpack_require__(86);
 	
 	var _getPrototypeOf2 = _interopRequireDefault(_getPrototypeOf);
-	
-	var _possibleConstructorReturn2 = __webpack_require__(90);
-	
-	var _possibleConstructorReturn3 = _interopRequireDefault(_possibleConstructorReturn2);
-	
-	var _inherits2 = __webpack_require__(108);
-	
-	var _inherits3 = _interopRequireDefault(_inherits2);
-	
-	var _assign = __webpack_require__(116);
-	
-	var _assign2 = _interopRequireDefault(_assign);
 	
 	var _classCallCheck2 = __webpack_require__(80);
 	
@@ -2243,241 +2261,49 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	var _createClass3 = _interopRequireDefault(_createClass2);
 	
+	var _possibleConstructorReturn2 = __webpack_require__(90);
+	
+	var _possibleConstructorReturn3 = _interopRequireDefault(_possibleConstructorReturn2);
+	
+	var _inherits2 = __webpack_require__(108);
+	
+	var _inherits3 = _interopRequireDefault(_inherits2);
+	
+	var _AbstractAdapter2 = __webpack_require__(116);
+	
+	var _AbstractAdapter3 = _interopRequireDefault(_AbstractAdapter2);
+	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
-	var MessageType = function () {
-	    function MessageType() {
-	        (0, _classCallCheck3.default)(this, MessageType);
+	var LoopbackAdapter = function (_AbstractAdapter) {
+	    (0, _inherits3.default)(LoopbackAdapter, _AbstractAdapter);
+	
+	    function LoopbackAdapter() {
+	        (0, _classCallCheck3.default)(this, LoopbackAdapter);
+	        return (0, _possibleConstructorReturn3.default)(this, (LoopbackAdapter.__proto__ || (0, _getPrototypeOf2.default)(LoopbackAdapter)).apply(this, arguments));
 	    }
 	
-	    (0, _createClass3.default)(MessageType, null, [{
-	        key: 'QUERY',
-	        get: function get() {
-	            return 'QUERY';
+	    (0, _createClass3.default)(LoopbackAdapter, [{
+	        key: 'send',
+	        value: function send(message) {
+	            this._messageHandler(message);
 	        }
 	    }, {
-	        key: 'QUERYRESULT',
-	        get: function get() {
-	            return 'QUERYRESULT';
+	        key: 'open',
+	        value: function open() {
+	            return;
 	        }
 	    }, {
-	        key: 'EVENT',
-	        get: function get() {
-	            return 'EVENT';
-	        }
-	    }, {
-	        key: 'COMMAND',
-	        get: function get() {
-	            return 'COMMAND';
+	        key: 'close',
+	        value: function close() {
+	            return;
 	        }
 	    }]);
-	    return MessageType;
-	}();
-	
-	var Message = function () {
-	    function Message(id, type, name, payload) {
-	        (0, _classCallCheck3.default)(this, Message);
-	
-	        var me = this;
-	        if (!name.length) {
-	            throw new Error('A name has to be a non-empty string');
-	        }
-	        payload = payload || {};
-	        me._id = id;
-	        me._type = type;
-	        me._name = name;
-	        me._payload = payload;
-	    }
-	
-	    (0, _createClass3.default)(Message, [{
-	        key: 'toDto',
-	        value: function toDto() {
-	            //@TODO: Change this as soon as we introduce results for other message
-	            // types than query
-	            return MessageDto.create(this._id, this._type, this._name, true, this._payload, '');
-	        }
-	    }, {
-	        key: 'id',
-	        get: function get() {
-	            return this._id;
-	        }
-	    }, {
-	        key: 'type',
-	        get: function get() {
-	            return this._type;
-	        }
-	    }, {
-	        key: 'payload',
-	        get: function get() {
-	            return (0, _assign2.default)({}, this._payload);
-	        }
-	    }, {
-	        key: 'name',
-	        get: function get() {
-	            return this._name;
-	        }
-	    }]);
-	    return Message;
-	}();
-	
-	var MessageDto = function () {
-	    function MessageDto(id, type, name, success, payload, error) {
-	        (0, _classCallCheck3.default)(this, MessageDto);
-	
-	        this._id = id;
-	        this._name = name;
-	        this._type = type;
-	        this._success = success;
-	        this._payload = payload;
-	        this._error = error;
-	    }
-	
-	    (0, _createClass3.default)(MessageDto, [{
-	        key: 'id',
-	        get: function get() {
-	            return this._id;
-	        }
-	    }, {
-	        key: 'type',
-	        get: function get() {
-	            return this._type;
-	        }
-	    }, {
-	        key: 'name',
-	        get: function get() {
-	            return this._name;
-	        }
-	    }, {
-	        key: 'payload',
-	        get: function get() {
-	            return this._payload;
-	        }
-	    }, {
-	        key: 'success',
-	        get: function get() {
-	            return this._success;
-	        }
-	    }, {
-	        key: 'error',
-	        get: function get() {
-	            return this._error;
-	        }
-	    }], [{
-	        key: 'create',
-	        value: function create(id, type, name, success, payload, error) {
-	            return new MessageDto(id, type, name, success, payload || {}, error || '');
-	        }
-	    }]);
-	    return MessageDto;
-	}();
-	
-	var Command = function (_Message) {
-	    (0, _inherits3.default)(Command, _Message);
-	
-	    function Command(id, name, payload) {
-	        (0, _classCallCheck3.default)(this, Command);
-	        return (0, _possibleConstructorReturn3.default)(this, (Command.__proto__ || (0, _getPrototypeOf2.default)(Command)).call(this, id, MessageType.COMMAND, name, payload));
-	    }
-	
-	    return Command;
-	}(Message);
-	
-	var Event = function (_Message2) {
-	    (0, _inherits3.default)(Event, _Message2);
-	
-	    function Event(id, name, payload) {
-	        (0, _classCallCheck3.default)(this, Event);
-	        return (0, _possibleConstructorReturn3.default)(this, (Event.__proto__ || (0, _getPrototypeOf2.default)(Event)).call(this, id, MessageType.EVENT, name, payload));
-	    }
-	
-	    return Event;
-	}(Message);
-	
-	var Query = function (_Message3) {
-	    (0, _inherits3.default)(Query, _Message3);
-	
-	    function Query(id, name, payload) {
-	        (0, _classCallCheck3.default)(this, Query);
-	        return (0, _possibleConstructorReturn3.default)(this, (Query.__proto__ || (0, _getPrototypeOf2.default)(Query)).call(this, id, MessageType.QUERY, name, payload));
-	    }
-	
-	    return Query;
-	}(Message);
-	
-	var QueryResult = function (_Message4) {
-	    (0, _inherits3.default)(QueryResult, _Message4);
-	
-	    function QueryResult(id, name, success, payload, error) {
-	        (0, _classCallCheck3.default)(this, QueryResult);
-	
-	        var _this4 = (0, _possibleConstructorReturn3.default)(this, (QueryResult.__proto__ || (0, _getPrototypeOf2.default)(QueryResult)).call(this, id, MessageType.QUERYRESULT, name, payload));
-	
-	        var me = _this4;
-	        me._success = success;
-	        me._error = error || '';
-	        return _this4;
-	    }
-	
-	    (0, _createClass3.default)(QueryResult, [{
-	        key: 'toDto',
-	        value: function toDto() {
-	            //@TODO: Change this as soon as we introduce results for other message
-	            // types than query
-	            return MessageDto.create(this.id, this.type, this.name, this.success, this.payload, this.error);
-	        }
-	    }, {
-	        key: 'success',
-	        get: function get() {
-	            return this._success;
-	        }
-	    }, {
-	        key: 'error',
-	        get: function get() {
-	            return this._error;
-	        }
-	    }]);
-	    return QueryResult;
-	}(Message);
-	
-	var MessageFactory = function () {
-	    function MessageFactory() {
-	        (0, _classCallCheck3.default)(this, MessageFactory);
-	    }
-	
-	    (0, _createClass3.default)(MessageFactory, null, [{
-	        key: 'createFromDto',
-	        value: function createFromDto(dto) {
-	            var id = dto.id,
-	                type = dto.type,
-	                name = dto.name,
-	                payload = dto.payload,
-	                success = dto.success,
-	                error = dto.error;
-	            switch (type) {
-	                case MessageType.COMMAND:
-	                    return new Command(id, name, payload);
-	                case MessageType.QUERY:
-	                    return new Query(id, name, payload);
-	                case MessageType.QUERYRESULT:
-	                    return new QueryResult(id, name, success, payload, error);
-	                case MessageType.EVENT:
-	                    return new Event(id, name, payload);
-	                default:
-	                    throw new Error('Message type "' + type + '" is not valid');
-	            }
-	        }
-	    }]);
-	    return MessageFactory;
-	}();
-	
-	exports.Message = Message;
-	exports.Command = Command;
-	exports.Query = Query;
-	exports.QueryResult = QueryResult;
-	exports.Event = Event;
-	exports.MessageFactory = MessageFactory;
-	exports.MessageDto = MessageDto;
-	exports.MessageType = MessageType;
+	    return LoopbackAdapter;
+	}(_AbstractAdapter3.default);
+
+	exports.default = LoopbackAdapter;
+	module.exports = exports['default'];
 
 /***/ },
 /* 86 */
@@ -3093,26 +2919,439 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 116 */
 /***/ function(module, exports, __webpack_require__) {
 
-	module.exports = { "default": __webpack_require__(117), __esModule: true };
+	"use strict";
+	
+	Object.defineProperty(exports, "__esModule", {
+	    value: true
+	});
+	
+	var _classCallCheck2 = __webpack_require__(80);
+	
+	var _classCallCheck3 = _interopRequireDefault(_classCallCheck2);
+	
+	var _createClass2 = __webpack_require__(81);
+	
+	var _createClass3 = _interopRequireDefault(_createClass2);
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+	
+	var AbstractAdapter = function () {
+	    function AbstractAdapter() {
+	        (0, _classCallCheck3.default)(this, AbstractAdapter);
+	    }
+	
+	    (0, _createClass3.default)(AbstractAdapter, [{
+	        key: "registerMessageHandler",
+	        value: function registerMessageHandler(handler) {
+	            var me = this;
+	            me._messageHandler = handler;
+	        }
+	    }]);
+	    return AbstractAdapter;
+	}();
+	
+	exports.default = AbstractAdapter;
+	module.exports = exports["default"];
 
 /***/ },
 /* 117 */
 /***/ function(module, exports, __webpack_require__) {
 
-	__webpack_require__(118);
-	module.exports = __webpack_require__(13).Object.assign;
+	'use strict';
+	
+	Object.defineProperty(exports, "__esModule", {
+	    value: true
+	});
+	
+	var _getPrototypeOf = __webpack_require__(86);
+	
+	var _getPrototypeOf2 = _interopRequireDefault(_getPrototypeOf);
+	
+	var _classCallCheck2 = __webpack_require__(80);
+	
+	var _classCallCheck3 = _interopRequireDefault(_classCallCheck2);
+	
+	var _createClass2 = __webpack_require__(81);
+	
+	var _createClass3 = _interopRequireDefault(_createClass2);
+	
+	var _possibleConstructorReturn2 = __webpack_require__(90);
+	
+	var _possibleConstructorReturn3 = _interopRequireDefault(_possibleConstructorReturn2);
+	
+	var _inherits2 = __webpack_require__(108);
+	
+	var _inherits3 = _interopRequireDefault(_inherits2);
+	
+	var _MessageDto = __webpack_require__(118);
+	
+	var _MessageDto2 = _interopRequireDefault(_MessageDto);
+	
+	var _MessageFactory = __webpack_require__(119);
+	
+	var _MessageFactory2 = _interopRequireDefault(_MessageFactory);
+	
+	var _AbstractAdapter2 = __webpack_require__(116);
+	
+	var _AbstractAdapter3 = _interopRequireDefault(_AbstractAdapter2);
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+	
+	var PostMessageAPIAdapter = function (_AbstractAdapter) {
+	    (0, _inherits3.default)(PostMessageAPIAdapter, _AbstractAdapter);
+	
+	    function PostMessageAPIAdapter(element, origin) {
+	        (0, _classCallCheck3.default)(this, PostMessageAPIAdapter);
+	
+	        var _this = (0, _possibleConstructorReturn3.default)(this, (PostMessageAPIAdapter.__proto__ || (0, _getPrototypeOf2.default)(PostMessageAPIAdapter)).call(this));
+	
+	        var me = _this;
+	        me._element = element;
+	        me._origin = origin;
+	        return _this;
+	    }
+	
+	    (0, _createClass3.default)(PostMessageAPIAdapter, [{
+	        key: 'open',
+	        value: function open() {
+	            var me = this;
+	            if (me._listener) {
+	                return;
+	            }
+	            me._listener = function (event) {
+	                me._messageHandler(me.messageFromEvent(event));
+	            };
+	            window.addEventListener('message', me._listener);
+	        }
+	    }, {
+	        key: 'close',
+	        value: function close() {
+	            var me = this;
+	            if (me._listener) {
+	                window.removeEventListener('message', me._listener);
+	                me._listener = null;
+	            }
+	        }
+	    }, {
+	        key: 'send',
+	        value: function send(message) {
+	            var me = this;
+	            me._element.postMessage(message.toDto(), me._origin);
+	        }
+	    }, {
+	        key: 'messageFromEvent',
+	        value: function messageFromEvent(event) {
+	            var data = event.data,
+	                dto = _MessageDto2.default.create(data._id, data._type, data._name, data._success, data._payload, data._error);
+	            return _MessageFactory2.default.createFromDto(dto);
+	        }
+	    }]);
+	    return PostMessageAPIAdapter;
+	}(_AbstractAdapter3.default);
+
+	exports.default = PostMessageAPIAdapter;
+	module.exports = exports['default'];
 
 /***/ },
 /* 118 */
 /***/ function(module, exports, __webpack_require__) {
 
-	// 19.1.3.1 Object.assign(target, source)
-	var $export = __webpack_require__(11);
+	'use strict';
 	
-	$export($export.S + $export.F, 'Object', {assign: __webpack_require__(119)});
+	Object.defineProperty(exports, "__esModule", {
+	    value: true
+	});
+	
+	var _classCallCheck2 = __webpack_require__(80);
+	
+	var _classCallCheck3 = _interopRequireDefault(_classCallCheck2);
+	
+	var _createClass2 = __webpack_require__(81);
+	
+	var _createClass3 = _interopRequireDefault(_createClass2);
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+	
+	var MessageDto = function () {
+	    function MessageDto(id, type, name, success, payload, error) {
+	        (0, _classCallCheck3.default)(this, MessageDto);
+	
+	        this._id = id;
+	        this._name = name;
+	        this._type = type;
+	        this._success = success;
+	        this._payload = payload;
+	        this._error = error;
+	    }
+	
+	    (0, _createClass3.default)(MessageDto, [{
+	        key: 'id',
+	        get: function get() {
+	            return this._id;
+	        }
+	    }, {
+	        key: 'type',
+	        get: function get() {
+	            return this._type;
+	        }
+	    }, {
+	        key: 'name',
+	        get: function get() {
+	            return this._name;
+	        }
+	    }, {
+	        key: 'payload',
+	        get: function get() {
+	            return this._payload;
+	        }
+	    }, {
+	        key: 'success',
+	        get: function get() {
+	            return this._success;
+	        }
+	    }, {
+	        key: 'error',
+	        get: function get() {
+	            return this._error;
+	        }
+	    }], [{
+	        key: 'create',
+	        value: function create(id, type, name, success, payload, error) {
+	            return new MessageDto(id, type, name, success, payload || {}, error || '');
+	        }
+	    }]);
+	    return MessageDto;
+	}();
+
+	exports.default = MessageDto;
+	module.exports = exports['default'];
 
 /***/ },
 /* 119 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, "__esModule", {
+	    value: true
+	});
+	
+	var _classCallCheck2 = __webpack_require__(80);
+	
+	var _classCallCheck3 = _interopRequireDefault(_classCallCheck2);
+	
+	var _createClass2 = __webpack_require__(81);
+	
+	var _createClass3 = _interopRequireDefault(_createClass2);
+	
+	var _Command = __webpack_require__(120);
+	
+	var _Command2 = _interopRequireDefault(_Command);
+	
+	var _Event = __webpack_require__(127);
+	
+	var _Event2 = _interopRequireDefault(_Event);
+	
+	var _MessageType = __webpack_require__(126);
+	
+	var _MessageType2 = _interopRequireDefault(_MessageType);
+	
+	var _Query = __webpack_require__(128);
+	
+	var _Query2 = _interopRequireDefault(_Query);
+	
+	var _QueryResult = __webpack_require__(129);
+	
+	var _QueryResult2 = _interopRequireDefault(_QueryResult);
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+	
+	var MessageFactory = function () {
+	    function MessageFactory() {
+	        (0, _classCallCheck3.default)(this, MessageFactory);
+	    }
+	
+	    (0, _createClass3.default)(MessageFactory, null, [{
+	        key: 'createFromDto',
+	        value: function createFromDto(dto) {
+	            var id = dto.id,
+	                type = dto.type,
+	                name = dto.name,
+	                payload = dto.payload,
+	                success = dto.success,
+	                error = dto.error;
+	            switch (type) {
+	                case _MessageType2.default.COMMAND:
+	                    return new _Command2.default(id, name, payload);
+	                case _MessageType2.default.QUERY:
+	                    return new _Query2.default(id, name, payload);
+	                case _MessageType2.default.QUERYRESULT:
+	                    return new _QueryResult2.default(id, name, success, payload, error);
+	                case _MessageType2.default.EVENT:
+	                    return new _Event2.default(id, name, payload);
+	                default:
+	                    throw new Error('Message _type "' + type + '" is not valid');
+	            }
+	        }
+	    }]);
+	    return MessageFactory;
+	}();
+
+	exports.default = MessageFactory;
+	module.exports = exports['default'];
+
+/***/ },
+/* 120 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, "__esModule", {
+	    value: true
+	});
+	
+	var _getPrototypeOf = __webpack_require__(86);
+	
+	var _getPrototypeOf2 = _interopRequireDefault(_getPrototypeOf);
+	
+	var _classCallCheck2 = __webpack_require__(80);
+	
+	var _classCallCheck3 = _interopRequireDefault(_classCallCheck2);
+	
+	var _possibleConstructorReturn2 = __webpack_require__(90);
+	
+	var _possibleConstructorReturn3 = _interopRequireDefault(_possibleConstructorReturn2);
+	
+	var _inherits2 = __webpack_require__(108);
+	
+	var _inherits3 = _interopRequireDefault(_inherits2);
+	
+	var _Message2 = __webpack_require__(121);
+	
+	var _Message3 = _interopRequireDefault(_Message2);
+	
+	var _MessageType = __webpack_require__(126);
+	
+	var _MessageType2 = _interopRequireDefault(_MessageType);
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+	
+	var Command = function (_Message) {
+	    (0, _inherits3.default)(Command, _Message);
+	
+	    function Command(id, name, payload) {
+	        (0, _classCallCheck3.default)(this, Command);
+	        return (0, _possibleConstructorReturn3.default)(this, (Command.__proto__ || (0, _getPrototypeOf2.default)(Command)).call(this, id, _MessageType2.default.COMMAND, name, payload));
+	    }
+	
+	    return Command;
+	}(_Message3.default);
+
+	exports.default = Command;
+	module.exports = exports['default'];
+
+/***/ },
+/* 121 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, "__esModule", {
+	    value: true
+	});
+	
+	var _assign = __webpack_require__(122);
+	
+	var _assign2 = _interopRequireDefault(_assign);
+	
+	var _classCallCheck2 = __webpack_require__(80);
+	
+	var _classCallCheck3 = _interopRequireDefault(_classCallCheck2);
+	
+	var _createClass2 = __webpack_require__(81);
+	
+	var _createClass3 = _interopRequireDefault(_createClass2);
+	
+	var _MessageDto = __webpack_require__(118);
+	
+	var _MessageDto2 = _interopRequireDefault(_MessageDto);
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+	
+	var Message = function () {
+	    function Message(id, type, name, payload) {
+	        (0, _classCallCheck3.default)(this, Message);
+	
+	        var me = this;
+	        if (!name.length) {
+	            throw new Error('A name has to be a non-empty string');
+	        }
+	        payload = payload || {};
+	        me._id = id;
+	        me._type = type;
+	        me._name = name;
+	        me._payload = payload;
+	    }
+	
+	    (0, _createClass3.default)(Message, [{
+	        key: 'toDto',
+	        value: function toDto() {
+	            // @TODO: Change this as soon as we introduce results for other message
+	            // types than query
+	            var dto = _MessageDto2.default.create(this._id, this._type, this._name, true, this._payload, '');
+	            return dto;
+	        }
+	    }, {
+	        key: 'id',
+	        get: function get() {
+	            return this._id;
+	        }
+	    }, {
+	        key: 'type',
+	        get: function get() {
+	            return this._type;
+	        }
+	    }, {
+	        key: 'name',
+	        get: function get() {
+	            return this._name;
+	        }
+	    }, {
+	        key: 'payload',
+	        get: function get() {
+	            return (0, _assign2.default)({}, this._payload);
+	        }
+	    }]);
+	    return Message;
+	}();
+	
+	exports.default = Message;
+	module.exports = exports['default'];
+
+/***/ },
+/* 122 */
+/***/ function(module, exports, __webpack_require__) {
+
+	module.exports = { "default": __webpack_require__(123), __esModule: true };
+
+/***/ },
+/* 123 */
+/***/ function(module, exports, __webpack_require__) {
+
+	__webpack_require__(124);
+	module.exports = __webpack_require__(13).Object.assign;
+
+/***/ },
+/* 124 */
+/***/ function(module, exports, __webpack_require__) {
+
+	// 19.1.3.1 Object.assign(target, source)
+	var $export = __webpack_require__(11);
+	
+	$export($export.S + $export.F, 'Object', {assign: __webpack_require__(125)});
+
+/***/ },
+/* 125 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -3150,7 +3389,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	} : $assign;
 
 /***/ },
-/* 120 */
+/* 126 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -3158,39 +3397,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	Object.defineProperty(exports, "__esModule", {
 	    value: true
 	});
-	exports.MessageListener = exports.QueryBus = exports.CommandBus = exports.EventBus = undefined;
-	
-	var _promise = __webpack_require__(2);
-	
-	var _promise2 = _interopRequireDefault(_promise);
-	
-	var _get2 = __webpack_require__(121);
-	
-	var _get3 = _interopRequireDefault(_get2);
-	
-	var _getIterator2 = __webpack_require__(125);
-	
-	var _getIterator3 = _interopRequireDefault(_getIterator2);
-	
-	var _getPrototypeOf = __webpack_require__(86);
-	
-	var _getPrototypeOf2 = _interopRequireDefault(_getPrototypeOf);
-	
-	var _possibleConstructorReturn2 = __webpack_require__(90);
-	
-	var _possibleConstructorReturn3 = _interopRequireDefault(_possibleConstructorReturn2);
-	
-	var _inherits2 = __webpack_require__(108);
-	
-	var _inherits3 = _interopRequireDefault(_inherits2);
-	
-	var _set = __webpack_require__(128);
-	
-	var _set2 = _interopRequireDefault(_set);
-	
-	var _map = __webpack_require__(67);
-	
-	var _map2 = _interopRequireDefault(_map);
 	
 	var _classCallCheck2 = __webpack_require__(80);
 	
@@ -3202,93 +3408,279 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
-	var MessageListener = function () {
-	    function MessageListener(messageName, fn, scope, once) {
-	        (0, _classCallCheck3.default)(this, MessageListener);
-	
-	        this._messageName = messageName;
-	        this._fn = fn;
-	        this._scope = scope;
-	        this._once = once;
+	var MessageType = function () {
+	    function MessageType() {
+	        (0, _classCallCheck3.default)(this, MessageType);
 	    }
 	
-	    (0, _createClass3.default)(MessageListener, [{
-	        key: 'execute',
-	        value: function execute(messagePayload, resolve, reject) {
-	            return this._fn.call(this._scope, messagePayload, resolve, reject);
+	    (0, _createClass3.default)(MessageType, null, [{
+	        key: 'QUERY',
+	        get: function get() {
+	            return 'QUERY';
 	        }
 	    }, {
-	        key: 'messageName',
+	        key: 'QUERYRESULT',
 	        get: function get() {
-	            return this._messageName;
+	            return 'QUERYRESULT';
 	        }
 	    }, {
-	        key: 'once',
+	        key: 'EVENT',
 	        get: function get() {
-	            return this._once;
+	            return 'EVENT';
+	        }
+	    }, {
+	        key: 'COMMAND',
+	        get: function get() {
+	            return 'COMMAND';
 	        }
 	    }]);
-	    return MessageListener;
+	    return MessageType;
 	}();
+
+	exports.default = MessageType;
+	module.exports = exports['default'];
+
+/***/ },
+/* 127 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
 	
-	var MessageBus = function () {
-	    function MessageBus() {
-	        (0, _classCallCheck3.default)(this, MessageBus);
+	Object.defineProperty(exports, "__esModule", {
+	    value: true
+	});
 	
-	        this._listeners = new _map2.default();
+	var _getPrototypeOf = __webpack_require__(86);
+	
+	var _getPrototypeOf2 = _interopRequireDefault(_getPrototypeOf);
+	
+	var _classCallCheck2 = __webpack_require__(80);
+	
+	var _classCallCheck3 = _interopRequireDefault(_classCallCheck2);
+	
+	var _possibleConstructorReturn2 = __webpack_require__(90);
+	
+	var _possibleConstructorReturn3 = _interopRequireDefault(_possibleConstructorReturn2);
+	
+	var _inherits2 = __webpack_require__(108);
+	
+	var _inherits3 = _interopRequireDefault(_inherits2);
+	
+	var _Message2 = __webpack_require__(121);
+	
+	var _Message3 = _interopRequireDefault(_Message2);
+	
+	var _MessageType = __webpack_require__(126);
+	
+	var _MessageType2 = _interopRequireDefault(_MessageType);
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+	
+	var Event = function (_Message) {
+	    (0, _inherits3.default)(Event, _Message);
+	
+	    function Event(id, name, payload) {
+	        (0, _classCallCheck3.default)(this, Event);
+	        return (0, _possibleConstructorReturn3.default)(this, (Event.__proto__ || (0, _getPrototypeOf2.default)(Event)).call(this, id, _MessageType2.default.EVENT, name, payload));
 	    }
 	
-	    (0, _createClass3.default)(MessageBus, [{
-	        key: 'register',
-	        value: function register(messageName, fn, scope, once) {
-	            var listener = new MessageListener(messageName, fn, scope, once);
-	            this.addListener(listener);
-	            return listener;
+	    return Event;
+	}(_Message3.default);
+
+	exports.default = Event;
+	module.exports = exports['default'];
+
+/***/ },
+/* 128 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, "__esModule", {
+	    value: true
+	});
+	
+	var _getPrototypeOf = __webpack_require__(86);
+	
+	var _getPrototypeOf2 = _interopRequireDefault(_getPrototypeOf);
+	
+	var _classCallCheck2 = __webpack_require__(80);
+	
+	var _classCallCheck3 = _interopRequireDefault(_classCallCheck2);
+	
+	var _possibleConstructorReturn2 = __webpack_require__(90);
+	
+	var _possibleConstructorReturn3 = _interopRequireDefault(_possibleConstructorReturn2);
+	
+	var _inherits2 = __webpack_require__(108);
+	
+	var _inherits3 = _interopRequireDefault(_inherits2);
+	
+	var _Message2 = __webpack_require__(121);
+	
+	var _Message3 = _interopRequireDefault(_Message2);
+	
+	var _MessageType = __webpack_require__(126);
+	
+	var _MessageType2 = _interopRequireDefault(_MessageType);
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+	
+	var Query = function (_Message) {
+	    (0, _inherits3.default)(Query, _Message);
+	
+	    function Query(id, name, payload) {
+	        (0, _classCallCheck3.default)(this, Query);
+	        return (0, _possibleConstructorReturn3.default)(this, (Query.__proto__ || (0, _getPrototypeOf2.default)(Query)).call(this, id, _MessageType2.default.QUERY, name, payload));
+	    }
+	
+	    return Query;
+	}(_Message3.default);
+
+	exports.default = Query;
+	module.exports = exports['default'];
+
+/***/ },
+/* 129 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, "__esModule", {
+	    value: true
+	});
+	
+	var _getPrototypeOf = __webpack_require__(86);
+	
+	var _getPrototypeOf2 = _interopRequireDefault(_getPrototypeOf);
+	
+	var _classCallCheck2 = __webpack_require__(80);
+	
+	var _classCallCheck3 = _interopRequireDefault(_classCallCheck2);
+	
+	var _createClass2 = __webpack_require__(81);
+	
+	var _createClass3 = _interopRequireDefault(_createClass2);
+	
+	var _possibleConstructorReturn2 = __webpack_require__(90);
+	
+	var _possibleConstructorReturn3 = _interopRequireDefault(_possibleConstructorReturn2);
+	
+	var _inherits2 = __webpack_require__(108);
+	
+	var _inherits3 = _interopRequireDefault(_inherits2);
+	
+	var _Message2 = __webpack_require__(121);
+	
+	var _Message3 = _interopRequireDefault(_Message2);
+	
+	var _MessageDto = __webpack_require__(118);
+	
+	var _MessageDto2 = _interopRequireDefault(_MessageDto);
+	
+	var _MessageType = __webpack_require__(126);
+	
+	var _MessageType2 = _interopRequireDefault(_MessageType);
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+	
+	var QueryResult = function (_Message) {
+	    (0, _inherits3.default)(QueryResult, _Message);
+	
+	    function QueryResult(id, name, success, payload, error) {
+	        (0, _classCallCheck3.default)(this, QueryResult);
+	
+	        var _this = (0, _possibleConstructorReturn3.default)(this, (QueryResult.__proto__ || (0, _getPrototypeOf2.default)(QueryResult)).call(this, id, _MessageType2.default.QUERYRESULT, name, payload));
+	
+	        var me = _this;
+	        me._success = success;
+	        me._error = error || '';
+	        return _this;
+	    }
+	
+	    (0, _createClass3.default)(QueryResult, [{
+	        key: 'toDto',
+	        value: function toDto() {
+	            // @TODO: Change this as soon as we introduce results for other message
+	            // types than query
+	            return _MessageDto2.default.create(this._id, this._type, this._name, this._success, this._payload, this._error);
 	        }
 	    }, {
-	        key: 'unregister',
-	        value: function unregister(listener) {
-	            if (!this._listeners.has(listener.messageName)) {
-	                return;
-	            }
-	            this._listeners.get(listener.messageName).delete(listener);
+	        key: 'success',
+	        get: function get() {
+	            return this._success;
 	        }
 	    }, {
-	        key: 'unregisterAllFor',
-	        value: function unregisterAllFor(messageName) {
-	            if (!this._listeners.has(messageName)) {
-	                return;
-	            }
-	            this._listeners.delete(messageName);
-	        }
-	    }, {
-	        key: 'addListener',
-	        value: function addListener(listener) {
-	            var messageName = listener.messageName;
-	            if (!this._listeners.has(messageName)) {
-	                this._listeners.set(messageName, new _set2.default());
-	            }
-	            this._listeners.get(messageName).add(listener);
+	        key: 'error',
+	        get: function get() {
+	            return this._error;
 	        }
 	    }]);
-	    return MessageBus;
-	}();
+	    return QueryResult;
+	}(_Message3.default);
+
+	exports.default = QueryResult;
+	module.exports = exports['default'];
+
+/***/ },
+/* 130 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
 	
-	var EventBus = function (_MessageBus) {
-	    (0, _inherits3.default)(EventBus, _MessageBus);
+	Object.defineProperty(exports, "__esModule", {
+	    value: true
+	});
 	
-	    function EventBus() {
-	        (0, _classCallCheck3.default)(this, EventBus);
-	        return (0, _possibleConstructorReturn3.default)(this, (EventBus.__proto__ || (0, _getPrototypeOf2.default)(EventBus)).apply(this, arguments));
+	var _getIterator2 = __webpack_require__(131);
+	
+	var _getIterator3 = _interopRequireDefault(_getIterator2);
+	
+	var _getPrototypeOf = __webpack_require__(86);
+	
+	var _getPrototypeOf2 = _interopRequireDefault(_getPrototypeOf);
+	
+	var _classCallCheck2 = __webpack_require__(80);
+	
+	var _classCallCheck3 = _interopRequireDefault(_classCallCheck2);
+	
+	var _createClass2 = __webpack_require__(81);
+	
+	var _createClass3 = _interopRequireDefault(_createClass2);
+	
+	var _possibleConstructorReturn2 = __webpack_require__(90);
+	
+	var _possibleConstructorReturn3 = _interopRequireDefault(_possibleConstructorReturn2);
+	
+	var _get2 = __webpack_require__(134);
+	
+	var _get3 = _interopRequireDefault(_get2);
+	
+	var _inherits2 = __webpack_require__(108);
+	
+	var _inherits3 = _interopRequireDefault(_inherits2);
+	
+	var _MessageBus2 = __webpack_require__(138);
+	
+	var _MessageBus3 = _interopRequireDefault(_MessageBus2);
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+	
+	var CommandBus = function (_MessageBus) {
+	    (0, _inherits3.default)(CommandBus, _MessageBus);
+	
+	    function CommandBus() {
+	        (0, _classCallCheck3.default)(this, CommandBus);
+	        return (0, _possibleConstructorReturn3.default)(this, (CommandBus.__proto__ || (0, _getPrototypeOf2.default)(CommandBus)).apply(this, arguments));
 	    }
 	
-	    (0, _createClass3.default)(EventBus, [{
+	    (0, _createClass3.default)(CommandBus, [{
 	        key: 'dispatch',
 	        value: function dispatch(message) {
-	            if (!this._listeners.has(message.name)) {
+	            if (!this.listeners.has(message.name)) {
 	                return false;
 	            }
-	            var collection = this._listeners.get(message.name);
+	            var collection = this.listeners.get(message.name);
 	            var _iteratorNormalCompletion = true;
 	            var _didIteratorError = false;
 	            var _iteratorError = undefined;
@@ -3297,9 +3689,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	                for (var _iterator = (0, _getIterator3.default)(collection), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
 	                    var listener = _step.value;
 	
-	                    if (listener.once) {
-	                        this.unregister(listener);
-	                    }
 	                    listener.execute(message.payload);
 	                }
 	            } catch (err) {
@@ -3317,132 +3706,50 @@ return /******/ (function(modules) { // webpackBootstrap
 	                }
 	            }
 	        }
-	    }]);
-	    return EventBus;
-	}(MessageBus);
-	
-	var CommandBus = function (_MessageBus2) {
-	    (0, _inherits3.default)(CommandBus, _MessageBus2);
-	
-	    function CommandBus() {
-	        (0, _classCallCheck3.default)(this, CommandBus);
-	        return (0, _possibleConstructorReturn3.default)(this, (CommandBus.__proto__ || (0, _getPrototypeOf2.default)(CommandBus)).apply(this, arguments));
-	    }
-	
-	    (0, _createClass3.default)(CommandBus, [{
-	        key: 'dispatch',
-	        value: function dispatch(message) {
-	            if (!this._listeners.has(message.name)) {
-	                return false;
-	            }
-	            var collection = this._listeners.get(message.name);
-	            var _iteratorNormalCompletion2 = true;
-	            var _didIteratorError2 = false;
-	            var _iteratorError2 = undefined;
-	
-	            try {
-	                for (var _iterator2 = (0, _getIterator3.default)(collection), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
-	                    var listener = _step2.value;
-	
-	                    listener.execute(message.payload);
-	                }
-	            } catch (err) {
-	                _didIteratorError2 = true;
-	                _iteratorError2 = err;
-	            } finally {
-	                try {
-	                    if (!_iteratorNormalCompletion2 && _iterator2.return) {
-	                        _iterator2.return();
-	                    }
-	                } finally {
-	                    if (_didIteratorError2) {
-	                        throw _iteratorError2;
-	                    }
-	                }
-	            }
-	        }
 	    }, {
 	        key: 'addListener',
 	        value: function addListener(listener) {
 	            var commandName = listener.messageName;
-	            if (this._listeners.has(commandName) && this._listeners.get(commandName).size) {
+	            if (this.listeners.has(commandName) && this.listeners.get(commandName).size) {
 	                throw new Error('A command only may have registered one handler');
 	            }
 	            (0, _get3.default)(CommandBus.prototype.__proto__ || (0, _getPrototypeOf2.default)(CommandBus.prototype), 'addListener', this).call(this, listener);
 	        }
 	    }]);
 	    return CommandBus;
-	}(MessageBus);
+	}(_MessageBus3.default);
 	
-	var QueryBus = function (_MessageBus3) {
-	    (0, _inherits3.default)(QueryBus, _MessageBus3);
-	
-	    function QueryBus() {
-	        (0, _classCallCheck3.default)(this, QueryBus);
-	        return (0, _possibleConstructorReturn3.default)(this, (QueryBus.__proto__ || (0, _getPrototypeOf2.default)(QueryBus)).apply(this, arguments));
-	    }
-	
-	    (0, _createClass3.default)(QueryBus, [{
-	        key: 'dispatch',
-	        value: function dispatch(message) {
-	            var promise = void 0;
-	            if (!this._listeners.has(message.name)) {
-	                return _promise2.default.reject('No finder registered for query "' + message.name + '"');
-	            }
-	            var collection = this._listeners.get(message.name);
-	            var _iteratorNormalCompletion3 = true;
-	            var _didIteratorError3 = false;
-	            var _iteratorError3 = undefined;
-	
-	            try {
-	                var _loop = function _loop() {
-	                    var listener = _step3.value;
-	
-	                    promise = new _promise2.default(function (resolve, reject) {
-	                        listener.execute(message.payload, resolve, reject);
-	                    });
-	                };
-	
-	                for (var _iterator3 = (0, _getIterator3.default)(collection), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
-	                    _loop();
-	                }
-	            } catch (err) {
-	                _didIteratorError3 = true;
-	                _iteratorError3 = err;
-	            } finally {
-	                try {
-	                    if (!_iteratorNormalCompletion3 && _iterator3.return) {
-	                        _iterator3.return();
-	                    }
-	                } finally {
-	                    if (_didIteratorError3) {
-	                        throw _iteratorError3;
-	                    }
-	                }
-	            }
-	
-	            return promise;
-	        }
-	    }, {
-	        key: 'addListener',
-	        value: function addListener(listener) {
-	            var queryName = listener.messageName;
-	            if (this._listeners.has(queryName) && this._listeners.get(queryName).size) {
-	                throw new Error('A query only may have registered one finder');
-	            }
-	            (0, _get3.default)(QueryBus.prototype.__proto__ || (0, _getPrototypeOf2.default)(QueryBus.prototype), 'addListener', this).call(this, listener);
-	        }
-	    }]);
-	    return QueryBus;
-	}(MessageBus);
-	
-	exports.EventBus = EventBus;
-	exports.CommandBus = CommandBus;
-	exports.QueryBus = QueryBus;
-	exports.MessageListener = MessageListener;
+	exports.default = CommandBus;
+	module.exports = exports['default'];
 
 /***/ },
-/* 121 */
+/* 131 */
+/***/ function(module, exports, __webpack_require__) {
+
+	module.exports = { "default": __webpack_require__(132), __esModule: true };
+
+/***/ },
+/* 132 */
+/***/ function(module, exports, __webpack_require__) {
+
+	__webpack_require__(49);
+	__webpack_require__(5);
+	module.exports = __webpack_require__(133);
+
+/***/ },
+/* 133 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var anObject = __webpack_require__(18)
+	  , get      = __webpack_require__(59);
+	module.exports = __webpack_require__(13).getIterator = function(it){
+	  var iterFn = get(it);
+	  if(typeof iterFn != 'function')throw TypeError(it + ' is not iterable!');
+	  return anObject(iterFn.call(it));
+	};
+
+/***/ },
+/* 134 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -3453,7 +3760,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	var _getPrototypeOf2 = _interopRequireDefault(_getPrototypeOf);
 	
-	var _getOwnPropertyDescriptor = __webpack_require__(122);
+	var _getOwnPropertyDescriptor = __webpack_require__(135);
 	
 	var _getOwnPropertyDescriptor2 = _interopRequireDefault(_getOwnPropertyDescriptor);
 	
@@ -3485,23 +3792,23 @@ return /******/ (function(modules) { // webpackBootstrap
 	};
 
 /***/ },
-/* 122 */
+/* 135 */
 /***/ function(module, exports, __webpack_require__) {
 
-	module.exports = { "default": __webpack_require__(123), __esModule: true };
+	module.exports = { "default": __webpack_require__(136), __esModule: true };
 
 /***/ },
-/* 123 */
+/* 136 */
 /***/ function(module, exports, __webpack_require__) {
 
-	__webpack_require__(124);
+	__webpack_require__(137);
 	var $Object = __webpack_require__(13).Object;
 	module.exports = function getOwnPropertyDescriptor(it, key){
 	  return $Object.getOwnPropertyDescriptor(it, key);
 	};
 
 /***/ },
-/* 124 */
+/* 137 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// 19.1.2.6 Object.getOwnPropertyDescriptor(O, P)
@@ -3515,50 +3822,102 @@ return /******/ (function(modules) { // webpackBootstrap
 	});
 
 /***/ },
-/* 125 */
+/* 138 */
 /***/ function(module, exports, __webpack_require__) {
 
-	module.exports = { "default": __webpack_require__(126), __esModule: true };
+	'use strict';
+	
+	Object.defineProperty(exports, "__esModule", {
+	    value: true
+	});
+	
+	var _set = __webpack_require__(139);
+	
+	var _set2 = _interopRequireDefault(_set);
+	
+	var _map = __webpack_require__(67);
+	
+	var _map2 = _interopRequireDefault(_map);
+	
+	var _classCallCheck2 = __webpack_require__(80);
+	
+	var _classCallCheck3 = _interopRequireDefault(_classCallCheck2);
+	
+	var _createClass2 = __webpack_require__(81);
+	
+	var _createClass3 = _interopRequireDefault(_createClass2);
+	
+	var _MessageListener = __webpack_require__(143);
+	
+	var _MessageListener2 = _interopRequireDefault(_MessageListener);
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+	
+	var MessageBus = function () {
+	    function MessageBus() {
+	        (0, _classCallCheck3.default)(this, MessageBus);
+	
+	        this.listeners = new _map2.default();
+	    }
+	
+	    (0, _createClass3.default)(MessageBus, [{
+	        key: 'register',
+	        value: function register(messageName, fn, scope, once) {
+	            var listener = new _MessageListener2.default(messageName, fn, scope, once);
+	            this.addListener(listener);
+	            return listener;
+	        }
+	    }, {
+	        key: 'unregister',
+	        value: function unregister(listener) {
+	            if (!this.listeners.has(listener.messageName)) {
+	                return;
+	            }
+	            this.listeners.get(listener.messageName).delete(listener);
+	        }
+	    }, {
+	        key: 'unregisterAllFor',
+	        value: function unregisterAllFor(messageName) {
+	            if (!this.listeners.has(messageName)) {
+	                return;
+	            }
+	            this.listeners.delete(messageName);
+	        }
+	    }, {
+	        key: 'addListener',
+	        value: function addListener(listener) {
+	            var messageName = listener.messageName;
+	            if (!this.listeners.has(messageName)) {
+	                this.listeners.set(messageName, new _set2.default());
+	            }
+	            this.listeners.get(messageName).add(listener);
+	        }
+	    }]);
+	    return MessageBus;
+	}();
+	
+	exports.default = MessageBus;
+	module.exports = exports['default'];
 
 /***/ },
-/* 126 */
+/* 139 */
 /***/ function(module, exports, __webpack_require__) {
 
-	__webpack_require__(49);
-	__webpack_require__(5);
-	module.exports = __webpack_require__(127);
+	module.exports = { "default": __webpack_require__(140), __esModule: true };
 
 /***/ },
-/* 127 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var anObject = __webpack_require__(18)
-	  , get      = __webpack_require__(59);
-	module.exports = __webpack_require__(13).getIterator = function(it){
-	  var iterFn = get(it);
-	  if(typeof iterFn != 'function')throw TypeError(it + ' is not iterable!');
-	  return anObject(iterFn.call(it));
-	};
-
-/***/ },
-/* 128 */
-/***/ function(module, exports, __webpack_require__) {
-
-	module.exports = { "default": __webpack_require__(129), __esModule: true };
-
-/***/ },
-/* 129 */
+/* 140 */
 /***/ function(module, exports, __webpack_require__) {
 
 	__webpack_require__(4);
 	__webpack_require__(5);
 	__webpack_require__(49);
-	__webpack_require__(130);
-	__webpack_require__(131);
+	__webpack_require__(141);
+	__webpack_require__(142);
 	module.exports = __webpack_require__(13).Set;
 
 /***/ },
-/* 130 */
+/* 141 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -3575,7 +3934,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	}, strong);
 
 /***/ },
-/* 131 */
+/* 142 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// https://github.com/DavidBruant/Map-Set.prototype.toJSON
@@ -3584,27 +3943,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	$export($export.P + $export.R, 'Set', {toJSON: __webpack_require__(78)('Set')});
 
 /***/ },
-/* 132 */
+/* 143 */
 /***/ function(module, exports, __webpack_require__) {
 
-	'use strict';
+	"use strict";
 	
 	Object.defineProperty(exports, "__esModule", {
 	    value: true
 	});
-	exports.PostMessageAPIAdapter = exports.LoopbackAdapter = exports.Adapters = undefined;
-	
-	var _getPrototypeOf = __webpack_require__(86);
-	
-	var _getPrototypeOf2 = _interopRequireDefault(_getPrototypeOf);
-	
-	var _possibleConstructorReturn2 = __webpack_require__(90);
-	
-	var _possibleConstructorReturn3 = _interopRequireDefault(_possibleConstructorReturn2);
-	
-	var _inherits2 = __webpack_require__(108);
-	
-	var _inherits3 = _interopRequireDefault(_inherits2);
 	
 	var _classCallCheck2 = __webpack_require__(80);
 	
@@ -3614,102 +3960,246 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	var _createClass3 = _interopRequireDefault(_createClass2);
 	
-	var _Message = __webpack_require__(85);
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+	
+	var MessageListener = function () {
+	    function MessageListener(messageName, fn, scope, once) {
+	        (0, _classCallCheck3.default)(this, MessageListener);
+	
+	        this._messageName = messageName;
+	        this._fn = fn;
+	        this._scope = scope;
+	        this._once = once;
+	    }
+	
+	    (0, _createClass3.default)(MessageListener, [{
+	        key: "execute",
+	        value: function execute(messagePayload, resolve, reject) {
+	            var me = this;
+	            return me._fn.call(me._scope, messagePayload, resolve, reject);
+	        }
+	    }, {
+	        key: "messageName",
+	        get: function get() {
+	            return this._messageName;
+	        }
+	    }, {
+	        key: "once",
+	        get: function get() {
+	            return this._once;
+	        }
+	    }]);
+	    return MessageListener;
+	}();
+	
+	exports.default = MessageListener;
+	module.exports = exports["default"];
+
+/***/ },
+/* 144 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, "__esModule", {
+	    value: true
+	});
+	
+	var _getIterator2 = __webpack_require__(131);
+	
+	var _getIterator3 = _interopRequireDefault(_getIterator2);
+	
+	var _getPrototypeOf = __webpack_require__(86);
+	
+	var _getPrototypeOf2 = _interopRequireDefault(_getPrototypeOf);
+	
+	var _classCallCheck2 = __webpack_require__(80);
+	
+	var _classCallCheck3 = _interopRequireDefault(_classCallCheck2);
+	
+	var _createClass2 = __webpack_require__(81);
+	
+	var _createClass3 = _interopRequireDefault(_createClass2);
+	
+	var _possibleConstructorReturn2 = __webpack_require__(90);
+	
+	var _possibleConstructorReturn3 = _interopRequireDefault(_possibleConstructorReturn2);
+	
+	var _inherits2 = __webpack_require__(108);
+	
+	var _inherits3 = _interopRequireDefault(_inherits2);
+	
+	var _MessageBus2 = __webpack_require__(138);
+	
+	var _MessageBus3 = _interopRequireDefault(_MessageBus2);
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
-	var AbstractAdapter = function () {
-	    function AbstractAdapter() {
-	        (0, _classCallCheck3.default)(this, AbstractAdapter);
+	var EventBus = function (_MessageBus) {
+	    (0, _inherits3.default)(EventBus, _MessageBus);
+	
+	    function EventBus() {
+	        (0, _classCallCheck3.default)(this, EventBus);
+	        return (0, _possibleConstructorReturn3.default)(this, (EventBus.__proto__ || (0, _getPrototypeOf2.default)(EventBus)).apply(this, arguments));
 	    }
 	
-	    (0, _createClass3.default)(AbstractAdapter, [{
-	        key: 'registerMessageHandler',
-	        value: function registerMessageHandler(handler) {
-	            var me = this;
-	            me._messageHandler = handler;
+	    (0, _createClass3.default)(EventBus, [{
+	        key: 'dispatch',
+	        value: function dispatch(message) {
+	            if (!this.listeners.has(message.name)) {
+	                return false;
+	            }
+	            var collection = this.listeners.get(message.name);
+	            var _iteratorNormalCompletion = true;
+	            var _didIteratorError = false;
+	            var _iteratorError = undefined;
+	
+	            try {
+	                for (var _iterator = (0, _getIterator3.default)(collection), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+	                    var listener = _step.value;
+	
+	                    if (listener.once) {
+	                        this.unregister(listener);
+	                    }
+	                    listener.execute(message.payload);
+	                }
+	            } catch (err) {
+	                _didIteratorError = true;
+	                _iteratorError = err;
+	            } finally {
+	                try {
+	                    if (!_iteratorNormalCompletion && _iterator.return) {
+	                        _iterator.return();
+	                    }
+	                } finally {
+	                    if (_didIteratorError) {
+	                        throw _iteratorError;
+	                    }
+	                }
+	            }
 	        }
 	    }]);
-	    return AbstractAdapter;
-	}();
+	    return EventBus;
+	}(_MessageBus3.default);
 	
-	var PostMessageAPIAdapter = function (_AbstractAdapter) {
-	    (0, _inherits3.default)(PostMessageAPIAdapter, _AbstractAdapter);
-	
-	    function PostMessageAPIAdapter(element, origin) {
-	        (0, _classCallCheck3.default)(this, PostMessageAPIAdapter);
-	
-	        var _this = (0, _possibleConstructorReturn3.default)(this, (PostMessageAPIAdapter.__proto__ || (0, _getPrototypeOf2.default)(PostMessageAPIAdapter)).call(this));
-	
-	        var me = _this;
-	        me._element = element;
-	        me._origin = origin;
-	        window.addEventListener('message', function (event) {
-	            me._messageHandler(me.messageFromEvent(event));
-	        });
-	        return _this;
-	    }
-	
-	    (0, _createClass3.default)(PostMessageAPIAdapter, [{
-	        key: 'send',
-	        value: function send(message) {
-	            var me = this;
-	            me._element.postMessage(message.toDto(), me._origin);
-	        }
-	    }, {
-	        key: 'messageFromEvent',
-	        value: function messageFromEvent(event) {
-	            var data = event.data,
-	                dto = _Message.MessageDto.create(data._id, data._type, data._name, data._success, data._payload, data._error);
-	            return _Message.MessageFactory.createFromDto(dto);
-	        }
-	    }]);
-	    return PostMessageAPIAdapter;
-	}(AbstractAdapter);
-	
-	var LoopbackAdapter = function (_AbstractAdapter2) {
-	    (0, _inherits3.default)(LoopbackAdapter, _AbstractAdapter2);
-	
-	    function LoopbackAdapter() {
-	        (0, _classCallCheck3.default)(this, LoopbackAdapter);
-	        return (0, _possibleConstructorReturn3.default)(this, (LoopbackAdapter.__proto__ || (0, _getPrototypeOf2.default)(LoopbackAdapter)).apply(this, arguments));
-	    }
-	
-	    (0, _createClass3.default)(LoopbackAdapter, [{
-	        key: 'send',
-	        value: function send(message) {
-	            var me = this;
-	            me._messageHandler(message);
-	        }
-	    }]);
-	    return LoopbackAdapter;
-	}(AbstractAdapter);
-	
-	var Adapters = function () {
-	    function Adapters() {
-	        (0, _classCallCheck3.default)(this, Adapters);
-	    }
-	
-	    (0, _createClass3.default)(Adapters, null, [{
-	        key: 'PostMessageAPI',
-	        get: function get() {
-	            return PostMessageAPIAdapter;
-	        }
-	    }, {
-	        key: 'Loopback',
-	        get: function get() {
-	            return LoopbackAdapter;
-	        }
-	    }]);
-	    return Adapters;
-	}();
-	
-	exports.Adapters = Adapters;
-	exports.LoopbackAdapter = LoopbackAdapter;
-	exports.PostMessageAPIAdapter = PostMessageAPIAdapter;
+	exports.default = EventBus;
+	module.exports = exports['default'];
 
 /***/ },
-/* 133 */
+/* 145 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, "__esModule", {
+	    value: true
+	});
+	
+	var _getIterator2 = __webpack_require__(131);
+	
+	var _getIterator3 = _interopRequireDefault(_getIterator2);
+	
+	var _promise = __webpack_require__(2);
+	
+	var _promise2 = _interopRequireDefault(_promise);
+	
+	var _getPrototypeOf = __webpack_require__(86);
+	
+	var _getPrototypeOf2 = _interopRequireDefault(_getPrototypeOf);
+	
+	var _classCallCheck2 = __webpack_require__(80);
+	
+	var _classCallCheck3 = _interopRequireDefault(_classCallCheck2);
+	
+	var _createClass2 = __webpack_require__(81);
+	
+	var _createClass3 = _interopRequireDefault(_createClass2);
+	
+	var _possibleConstructorReturn2 = __webpack_require__(90);
+	
+	var _possibleConstructorReturn3 = _interopRequireDefault(_possibleConstructorReturn2);
+	
+	var _get2 = __webpack_require__(134);
+	
+	var _get3 = _interopRequireDefault(_get2);
+	
+	var _inherits2 = __webpack_require__(108);
+	
+	var _inherits3 = _interopRequireDefault(_inherits2);
+	
+	var _MessageBus2 = __webpack_require__(138);
+	
+	var _MessageBus3 = _interopRequireDefault(_MessageBus2);
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+	
+	var QueryBus = function (_MessageBus) {
+	    (0, _inherits3.default)(QueryBus, _MessageBus);
+	
+	    function QueryBus() {
+	        (0, _classCallCheck3.default)(this, QueryBus);
+	        return (0, _possibleConstructorReturn3.default)(this, (QueryBus.__proto__ || (0, _getPrototypeOf2.default)(QueryBus)).apply(this, arguments));
+	    }
+	
+	    (0, _createClass3.default)(QueryBus, [{
+	        key: 'dispatch',
+	        value: function dispatch(message) {
+	            var promise = void 0;
+	            if (!this.listeners.has(message.name)) {
+	                return _promise2.default.reject('No finder registered for query "' + message.name + '"');
+	            }
+	            var collection = this.listeners.get(message.name);
+	            var _iteratorNormalCompletion = true;
+	            var _didIteratorError = false;
+	            var _iteratorError = undefined;
+	
+	            try {
+	                var _loop = function _loop() {
+	                    var listener = _step.value;
+	
+	                    promise = new _promise2.default(function (resolve, reject) {
+	                        listener.execute(message.payload, resolve, reject);
+	                    });
+	                };
+	
+	                for (var _iterator = (0, _getIterator3.default)(collection), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+	                    _loop();
+	                }
+	            } catch (err) {
+	                _didIteratorError = true;
+	                _iteratorError = err;
+	            } finally {
+	                try {
+	                    if (!_iteratorNormalCompletion && _iterator.return) {
+	                        _iterator.return();
+	                    }
+	                } finally {
+	                    if (_didIteratorError) {
+	                        throw _iteratorError;
+	                    }
+	                }
+	            }
+	
+	            return promise;
+	        }
+	    }, {
+	        key: 'addListener',
+	        value: function addListener(listener) {
+	            var queryName = listener.messageName;
+	            if (this.listeners.has(queryName) && this.listeners.get(queryName).size) {
+	                throw new Error('A query only may have registered one finder');
+	            }
+	            (0, _get3.default)(QueryBus.prototype.__proto__ || (0, _getPrototypeOf2.default)(QueryBus.prototype), 'addListener', this).call(this, listener);
+	        }
+	    }]);
+	    return QueryBus;
+	}(_MessageBus3.default);
+	
+	exports.default = QueryBus;
+	module.exports = exports['default'];
+
+/***/ },
+/* 146 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -3736,7 +4226,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    function IdGenerator() {
 	        (0, _classCallCheck3.default)(this, IdGenerator);
 	
-	        this._current = 1;
+	        this.current = 1;
 	    }
 	
 	    (0, _createClass3.default)(IdGenerator, [{
@@ -3744,7 +4234,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        value: function next() {
 	            return {
 	                done: false,
-	                value: '_' + Math.random().toString(36).substr(2, 9) + '-' + this._current++
+	                value: '_' + Math.random().toString(36).substr(2, 9) + '-' + this.current++
 	            };
 	        }
 	    }, {
